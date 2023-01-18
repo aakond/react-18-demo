@@ -1,8 +1,7 @@
-import React from "react";
+import React from 'react';
 
 const SuspendedPage: React.FC = () => {
-    return <h2>Suspended page was loaded!</h2>;
-}
+  return <h2>Suspended page was loaded!</h2>;
+};
 
 export default SuspendedPage;
-

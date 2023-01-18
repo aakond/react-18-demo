@@ -1,65 +1,120 @@
-import React, {useState, useTransition, useDeferredValue} from "react";
+import React, { useDeferredValue, useEffect, useState, useTransition } from 'react';
+
+import { LoadingSVG } from '../loading';
 
 import '../App.css';
 
-const items = Array(10000).fill('').map((_, key) => (`item ${key + 1}`));
+const items = Array(20000)
+  .fill('')
+  .map((_, key) => `item ${key + 1}`);
+
 const Transitions: React.FC = () => {
-    const [queryNoHooks, setQueryNoHooks] = useState<string>('');
-    const [queryUseTransition, setQueryUseTransition] = useState<string>('');
-    const [queryUseDeferredValue, setQueryUseDeferredValue] = useState<string>('');
+  const [queryNoHooks, setQueryNoHooks] = useState<string>('');
+  const [queryUseTransition, setQueryUseTransition] = useState<string>('');
+  const [queryUseDeferredValue, setQueryUseDeferredValue] = useState<string>('');
 
-    const [isPending, startTransition] = useTransition();
+  const [filterUseTransition, setFilterUseTransition] = useState<string>('');
 
-    let filteredItemsNoHooks: string[];
-    let filteredItemsUseTransition: string[];
-    let filteredItemsUseDeferredValue: string[];
+  const [filteredItemsNoHooks, setFilteredItemsNoHooks] = useState<string[]>(items);
+  const [filteredItemsUseTransition, setFilteredItemsUseTransition] = useState<string[]>(items);
+  const [filteredItemsUseDeferredValue, setFilteredItemsUseDeferredValue] = useState<string[]>(items);
 
-    filteredItemsNoHooks = queryNoHooks.length ? items.filter(item => item.includes(queryNoHooks)) : items;
-    filteredItemsUseTransition = queryUseTransition.length ? items.filter(item => item.includes(queryUseTransition)) : items;
-    filteredItemsUseDeferredValue = queryUseDeferredValue.length ? items.filter(item => item.includes(queryUseDeferredValue)) : items;
+  const [isPending, startTransition] = useTransition();
 
-    const deferredItems = useDeferredValue<string[]>(filteredItemsUseDeferredValue);
+  const deferredValue = useDeferredValue<string>(queryUseDeferredValue);
 
+  useEffect(() => {
+    !queryNoHooks.length && setFilteredItemsNoHooks(items);
+  }, [queryNoHooks]);
 
-    const changeQueryHandler = (value) => {
-        startTransition(() => {
-            setQueryUseTransition(value);
-        })
+  useEffect(() => {
+    if (!filterUseTransition.length) {
+      setFilterUseTransition('');
+      setFilteredItemsUseTransition(items);
+    } else {
+      setFilteredItemsUseTransition(items.filter((item) => item.includes(filterUseTransition)));
     }
+  }, [filterUseTransition, items]);
 
-    return (<>
-        <h2>Transitions</h2>
-        <div>Try x6 slowdown</div>
-        < br/>
-        < br/>
-        <div className="Columns">
-            <div>
-                <div>No hooks</div>
-                <input placeholder={"search something"} onChange={({target: {value}}) => setQueryNoHooks(value)}
-                       value={queryNoHooks}/>
-                <ul>
-                    {!!filteredItemsNoHooks.length ? (filteredItemsNoHooks as string[]).map((item, key) => <li key={key}>{item}</li>) : 'No items'}
-                </ul>
-            </div>
-            <div>
-                <div>useTransition</div>
-                <input placeholder={"search something"}
-                       onChange={({target: {value}}) => changeQueryHandler(value)} value={queryUseTransition}/>
-                {isPending && <h4>Concurrent work</h4>}
-                <ul>
-                    {!!filteredItemsUseTransition.length ? (filteredItemsUseTransition as string[]).map((item, key) => <li key={key}>{item}</li>) : 'No items'}
-                </ul>
-            </div>
-            <div>
-                <div>useDeferredValue</div>
-                <input placeholder={"search something"} onChange={({target: {value}}) => setQueryUseDeferredValue(value)}
-                       value={queryUseDeferredValue}/>
-                <ul>
-                    {!!deferredItems.length ? deferredItems.map((item, key) => <li key={key}>{item}</li>) : 'No items'}
-                </ul>
-            </div>
+  useEffect(() => {
+    if (!deferredValue.length) {
+      setQueryUseDeferredValue('');
+      setFilteredItemsUseDeferredValue(items);
+    } else {
+      setFilteredItemsUseDeferredValue(items.filter((item) => item.includes(deferredValue)));
+    }
+  }, [deferredValue, items]);
+
+  return (
+    <>
+      <div className="Columns">
+        <div>
+          <h2>Transitions</h2>
+          <div>Try slowdown</div>
         </div>
-    </>);
-}
+        <LoadingSVG />
+      </div>
+      <br />
+      <br />
+      <div className="Columns">
+        <div>
+          <div>No hooks</div>
+          <input
+            placeholder={'search something'}
+            onChange={({ target: { value } }) => {
+              setQueryNoHooks(value);
+              setFilteredItemsNoHooks(
+                queryNoHooks.length ? items.filter((item) => item.includes(queryNoHooks)) : items,
+              );
+            }}
+            value={queryNoHooks}
+          />
+          <ul>
+            {!!filteredItemsNoHooks.length
+              ? (filteredItemsNoHooks as string[]).map((item, key) => <li key={key}>{item}</li>)
+              : 'No items'}
+          </ul>
+        </div>
+        <div>
+          <div>useTransition</div>
+          <input
+            placeholder={'search something'}
+            onChange={({ target: { value } }) => {
+              setQueryUseTransition(value);
+              startTransition(() => {
+                setFilterUseTransition(value);
+              });
+            }}
+            value={queryUseTransition}
+          />
+          {isPending && <h4>Concurrent work</h4>}
+          <ul>
+            {!!filteredItemsUseTransition.length
+              ? filteredItemsUseTransition.map((item, key) => <li key={key}>{item}</li>)
+              : 'No items'}
+          </ul>
+        </div>
+        <div>
+          <div>useDeferredValue</div>
+          <input
+            placeholder={'search something'}
+            onChange={({ target: { value } }) => {
+              setQueryUseDeferredValue(value);
+              setFilteredItemsUseDeferredValue(
+                deferredValue.length ? items.filter((item) => item.includes(deferredValue)) : items,
+              );
+            }}
+            value={queryUseDeferredValue}
+          />
+          <ul>
+            {!!filteredItemsUseDeferredValue.length
+              ? filteredItemsUseDeferredValue.map((item, key) => <li key={key}>{item}</li>)
+              : 'No items'}
+          </ul>
+        </div>
+      </div>
+    </>
+  );
+};
 
 export default Transitions;
